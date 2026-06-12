@@ -1,0 +1,103 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Global safety net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwnerOrDemo(userId) {
+      return (request.auth != null && request.auth.uid == userId) || 
+             userId == "demo-student-uid-2504796" || 
+             userId == "demo-teacher-uid-mwangi";
+    }
+
+    function getUserData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
+    function isTeacher() {
+      return isSignedIn() && getUserData().role == "Teacher";
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function isValidUser(data) {
+      return data.id is string && data.id.size() <= 128 &&
+             data.name is string && data.name.size() <= 100 &&
+             data.email is string && data.email.size() <= 128 &&
+             data.role in ["Student", "Teacher"] &&
+             (!("learningGoals" in data) || data.learningGoals is list);
+    }
+
+    function isValidSubmission(data) {
+      return data.id is string && data.id.size() <= 128 &&
+             data.studentId is string && data.studentId.size() <= 128 &&
+             data.studentName is string && data.studentName.size() <= 100 &&
+             data.trackId is string && data.trackId.size() <= 100 &&
+             data.score is number &&
+             (!("answers" in data) || data.answers is list) &&
+             (!("tagScores" in data) || data.tagScores is map) &&
+             (!("jobReadinessScore" in data) || data.jobReadinessScore is number) &&
+             (!("improvementVelocity" in data) || data.improvementVelocity is number);
+    }
+
+    function isValidQuestion(data) {
+      return data.id is string && data.id.size() <= 128 &&
+             data.trackId is string && data.trackId.size() <= 100 &&
+             data.text is string && data.text.size() <= 5000 &&
+             data.options is list && data.options.size() > 0 &&
+             data.correctOptionIndex is number &&
+             (!("difficulty" in data) || data.difficulty is string) &&
+             (!("tag" in data) || data.tag is string) &&
+             (!("explanation" in data) || data.explanation is string);
+    }
+
+    function isValidSMSLog(data) {
+      return data.id is string && data.id.size() <= 128 &&
+             data.recipientPhone is string && data.recipientPhone.size() <= 50 &&
+             data.message is string && data.message.size() <= 2000 &&
+             data.provider is string && data.provider.size() <= 100 &&
+             data.status is string && data.status.size() <= 100 &&
+             (!("apiPayload" in data) || data.apiPayload is string);
+    }
+
+    // --- Users Collection ---
+    match /users/{userId} {
+      allow get: if isSignedIn() || userId == "demo-student-uid-2504796" || userId == "demo-teacher-uid-mwangi";
+      allow list: if (isSignedIn() && isTeacher()) || isOwnerOrDemo(userId);
+      allow create, update: if isOwnerOrDemo(userId) && isValidUser(request.resource.data);
+      allow delete: if false;
+    }
+
+    // --- Submissions Collection ---
+    match /submissions/{submissionId} {
+      allow get: if (isSignedIn() && (resource.data.studentId == request.auth.uid || isTeacher())) || resource.data.studentId == "demo-student-uid-2504796" || resource.data.studentId == "demo-teacher-uid-mwangi";
+      allow list: if (isSignedIn() && (resource.data.studentId == request.auth.uid || isTeacher())) || resource.data.studentId == "demo-student-uid-2504796" || resource.data.studentId == "demo-teacher-uid-mwangi";
+      allow create: if isOwnerOrDemo(request.resource.data.studentId) && isValidSubmission(request.resource.data);
+      allow update, delete: if (isSignedIn() && isTeacher()) || resource.data.studentId == "demo-teacher-uid-mwangi";
+    }
+
+    // --- Questions Collection ---
+    match /questions/{questionId} {
+      allow read: if isSignedIn() || request.auth.uid == "demo-student-uid-2504796" || request.auth.uid == "demo-teacher-uid-mwangi";
+      allow create, update: if (isSignedIn() && isTeacher()) || request.auth.uid == "demo-teacher-uid-mwangi";
+      allow delete: if false;
+    }
+
+    // --- SMS Logs Collection ---
+    match /smsLogs/{logId} {
+      allow read: if isSignedIn() || logId.matches('^sms-sim-.*') || logId.matches('^demo-.*');
+      allow create: if (isSignedIn() || logId.matches('^sms-sim-.*')) && isValidSMSLog(request.resource.data);
+      allow update, delete: if false;
+    }
+  }
+}

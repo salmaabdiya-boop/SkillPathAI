@@ -1,0 +1,6 @@
+{
+  "name": "SkillPath AI",
+  "description": "An intelligent skill assessment and career readiness system syncing KCA Tech Hackathon goals with adaptive assessment pathways.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

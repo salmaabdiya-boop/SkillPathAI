@@ -1,0 +1,150 @@
+{
+  "entities": {
+    "User": {
+      "title": "User Profile",
+      "description": "User account registration details and role tracking",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Firebase Auth UID"
+        },
+        "name": {
+          "type": "string",
+          "description": "Display name of the student or teacher"
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "description": "Academic or professional email address"
+        },
+        "role": {
+          "type": "string",
+          "enum": ["Student", "Teacher"],
+          "description": "Curriculum role determining system dashboards"
+        },
+        "learningGoals": {
+          "type": "array",
+          "description": "List of curated pathway targets"
+        }
+      },
+      "required": ["id", "name", "email", "role"]
+    },
+    "QuizSubmission": {
+      "title": "Quiz Submission",
+      "description": "Compiled diagnostic score details and skill gap analytics",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "studentId": {
+          "type": "string"
+        },
+        "studentName": {
+          "type": "string"
+        },
+        "trackId": {
+          "type": "string"
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "score": {
+          "type": "number"
+        },
+        "tagScores": {
+          "type": "object"
+        },
+        "jobReadinessScore": {
+          "type": "number"
+        },
+        "improvementVelocity": {
+          "type": "number"
+        }
+      },
+      "required": ["id", "studentId", "studentName", "trackId", "timestamp", "score", "tagScores", "jobReadinessScore"]
+    },
+    "Question": {
+      "title": "Question",
+      "description": "Diagnostic active testing pool questions managed by teachers",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "trackId": {
+          "type": "string"
+        },
+        "text": {
+          "type": "string"
+        },
+        "options": {
+          "type": "array"
+        },
+        "correctOptionIndex": {
+          "type": "number"
+        },
+        "difficulty": {
+          "type": "string"
+        },
+        "tag": {
+          "type": "string"
+        },
+        "explanation": {
+          "type": "string"
+        }
+      },
+      "required": ["id", "trackId", "text", "options", "correctOptionIndex", "difficulty", "tag"]
+    },
+    "SMSLog": {
+      "title": "SMS Log",
+      "description": "Telemetry logs of SMS alerts transmitted via mock Africa's Talking provider gateway",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "recipientPhone": {
+          "type": "string"
+        },
+        "message": {
+          "type": "string"
+        },
+        "provider": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string"
+        },
+        "apiPayload": {
+          "type": "string"
+        }
+      },
+      "required": ["id", "timestamp", "recipientPhone", "message", "provider", "status"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User profiles cataloged by Auth UID"
+    },
+    "/submissions/{submissionId}": {
+      "schema": "QuizSubmission",
+      "description": "Global table tracking learning runs"
+    },
+    "/questions/{questionId}": {
+      "schema": "Question",
+      "description": "Adaptive diagnostic testing question bank"
+    },
+    "/smsLogs/{logId}": {
+      "schema": "SMSLog",
+      "description": "Africa's Talking mock SMS telemetry entries"
+    }
+  }
+}
